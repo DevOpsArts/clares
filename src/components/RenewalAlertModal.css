@@ -1,0 +1,213 @@
+/* ── Renewal Alert Modal ── */
+
+.ram-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.ram-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: ram-slide-in 0.22s ease;
+}
+
+@keyframes ram-slide-in {
+  from { opacity: 0; transform: translateY(-18px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ram-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ram-header-icon {
+  width: 40px;
+  height: 40px;
+  background: #fff7ed;
+  border: 1.5px solid #fed7aa;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ea580c;
+  flex-shrink: 0;
+}
+
+.ram-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.15rem;
+}
+
+.ram-subtitle {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.ram-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.ram-close:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.ram-summary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  background: #fafafa;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ram-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.ram-summary-pill--expired  { background: #fee2e2; color: #dc2626; }
+.ram-summary-pill--critical { background: #fff7ed; color: #ea580c; }
+.ram-summary-pill--warning  { background: #fffbeb; color: #d97706; }
+
+.ram-table-wrap {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.ram-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.845rem;
+}
+
+.ram-table thead th {
+  background: #f9fafb;
+  padding: 0.6rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1.5px solid #e5e7eb;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+
+.ram-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+
+.ram-table tbody tr:last-child { border-bottom: none; }
+.ram-table tbody tr:hover { background: #f9fafb; }
+
+.ram-row--expired  td:first-child { border-left: 3px solid #dc2626; }
+.ram-row--critical td:first-child { border-left: 3px solid #f97316; }
+.ram-row--warning  td:first-child { border-left: 3px solid #fbbf24; }
+
+.ram-table td {
+  padding: 0.65rem 1rem;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.ram-cell-name { font-weight: 600; color: #111827; max-width: 200px; word-break: break-word; }
+.ram-cell-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.ram-badge {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.ram-badge--ssl     { background: #dbeafe; color: #1d4ed8; }
+.ram-badge--secret  { background: #f3e8ff; color: #7c3aed; }
+.ram-badge--license { background: #fef9c3; color: #854d0e; }
+
+.ram-chip {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ram-chip--expired  { background: #fee2e2; color: #dc2626; }
+.ram-chip--critical { background: #fff7ed; color: #ea580c; }
+.ram-chip--warning  { background: #fffbeb; color: #d97706; }
+.ram-chip--ok       { background: #dcfce7; color: #15803d; }
+
+.ram-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #f3f4f6;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.ram-footer-hint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.ram-btn-close {
+  padding: 0.5rem 1.25rem;
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.ram-btn-close:hover { background: #0284c7; }

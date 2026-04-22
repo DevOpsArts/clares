@@ -1,0 +1,196 @@
+/* ── App layout ── */
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+
+/* ── Nav bar ── */
+.layout-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 1.25rem;
+  background: #ffffff;
+  border-bottom: 1.5px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  flex-shrink: 0;
+}
+
+.layout-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.layout-hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.layout-hamburger:hover { background: #f3f4f6; }
+
+.layout-nav-brand {
+  text-decoration: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.layout-nav-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.2px;
+}
+
+.layout-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.layout-nav-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.layout-nav-role {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.layout-nav-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.875rem;
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.layout-nav-logout:hover {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+/* ── Body (sidebar + content) ── */
+.layout-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+/* ── Sidebar wrapper — desktop: in-flow, width-based collapse ── */
+.layout-sidebar {
+  flex-shrink: 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  transition: width 0.24s ease, min-width 0.24s ease;
+}
+
+.layout-sidebar--open {
+  width: 220px;
+  min-width: 220px;
+}
+
+/* ── Main content ── */
+.layout-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+/* ── Mobile overlay (hidden on desktop) ── */
+.layout-sidebar-overlay {
+  display: none;
+}
+
+/* ── Tablet (769 – 1024px) ── */
+@media (max-width: 1024px) {
+  .layout-main { padding: 1.5rem; }
+}
+
+/* ── Mobile (≤ 768px) ── */
+@media (max-width: 768px) {
+  /* Sidebar becomes a fixed overlay — remove from flow */
+  .layout-sidebar {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    height: calc(100vh - 56px);
+    z-index: 150;
+    /* override width collapse — use transform instead */
+    width: 220px !important;
+    min-width: 220px !important;
+    overflow: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.24s ease;
+  }
+
+  .layout-sidebar--open {
+    transform: translateX(0);
+    width: 220px !important;
+    min-width: 220px !important;
+  }
+
+  /* Dim overlay behind sidebar */
+  .layout-sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 56px 0 0 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 140;
+  }
+
+  .layout-main { padding: 1.25rem; }
+
+  /* Hide "Sign out" text, keep icon only */
+  .layout-nav-logout span { display: none; }
+}
+
+/* ── Small mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .layout-main { padding: 1rem; }
+  .layout-nav-user { font-size: 0.8rem; }
+  .layout-nav-role { display: none; }
+  .layout-nav-title { font-size: 0.9rem; }
+}
+

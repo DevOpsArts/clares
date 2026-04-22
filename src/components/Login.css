@@ -1,0 +1,227 @@
+/* ═══════════════════════════════════════════════════════════
+   CLARES — Login Page (split panel)
+   ═══════════════════════════════════════════════════════════ */
+
+.lp-root {
+  min-height: 100vh;
+  background: #e8edf2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+/* ── Outer card ── */
+.lp-card {
+  display: flex;
+  width: 100%;
+  max-width: 860px;
+  min-height: 520px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+  animation: lp-in 0.25s ease;
+}
+
+@keyframes lp-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Left panel ── */
+.lp-left {
+  flex: 1;
+  background: linear-gradient(145deg, #1e3a5f 0%, #0f2342 100%);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  min-width: 260px;
+}
+
+/* Decorative circles */
+.lp-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  pointer-events: none;
+}
+.lp-circle--tl { width: 260px; height: 260px; top: -80px; left: -80px; }
+.lp-circle--br { width: 200px; height: 200px; bottom: -60px; right: -60px; }
+
+.lp-left-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Logo */
+.lp-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 2.5rem;
+}
+.lp-logo-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+.lp-left-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin: 0 0 1.25rem;
+}
+
+.lp-left-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.5rem;
+  line-height: 1.1;
+}
+
+.lp-left-sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.55);
+  margin: 0 0 2rem;
+}
+
+/* Role cards */
+.lp-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.lp-role-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  transition: background 0.15s;
+}
+.lp-role-card:hover { background: rgba(255,255,255,0.15); }
+
+.lp-role-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.lp-role-icon--dim {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.6);
+}
+
+.lp-role-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+.lp-role-sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+}
+
+/* ── Right panel ── */
+.lp-right {
+  flex: 1;
+  background: #fff;
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 280px;
+}
+
+.lp-right-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #0f2342;
+  margin: 0 0 0.4rem;
+}
+
+.lp-right-sub {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0 0 2rem;
+}
+
+/* Form */
+.lp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.lp-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #111827;
+  background: #f8fafc;
+  box-sizing: border-box;
+  transition: border-color 0.15s, background 0.15s;
+  outline: none;
+}
+.lp-input:focus {
+  border-color: #1e3a5f;
+  background: #fff;
+}
+.lp-input::placeholder { color: #94a3b8; }
+
+.lp-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background: #1e3a5f;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 0.25rem;
+}
+.lp-btn:hover    { background: #0f2342; }
+.lp-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.lp-error {
+  color: #dc2626;
+  font-size: 0.83rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: #fef2f2;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .lp-left { display: none; }
+  .lp-card { border-radius: 16px; }
+}
+
