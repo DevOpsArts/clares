@@ -2,6 +2,8 @@
 
 A full-stack web portal for tracking and managing expiry dates of SSL certificates, licenses, certificates, and any custom asset type. Sends email reminders before items expire.
 
+![CLARES Login](public/clares_login.png)
+
 ---
 
 ## How It Works
