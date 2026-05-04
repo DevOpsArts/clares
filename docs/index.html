@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CLARES — Compliance License &amp; Asset Reminder Engine</title>
+  <title>CLARES — Compliance License &amp; Asset Reminder Engine System</title>
   <style>
     :root {
       --navy: #1e3a5f;
@@ -324,6 +324,7 @@
   <ul>
     <li><a href="#features">Features</a></li>
     <li><a href="#dashboard">Dashboard</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
     <li><a href="#tech-stack">Tech Stack</a></li>
     <li><a href="#api">API</a></li>
     <li><a href="#getting-started">Get Started</a></li>
@@ -341,7 +342,7 @@
       <span class="badge">JWT Auth</span>
     </div>
     <h1><span>CLARES</span></h1>
-    <p style="font-size:1.1rem;color:rgba(255,255,255,.55);margin-bottom:.75rem;">Compliance License &amp; Asset Reminder Engine</p>
+    <p style="font-size:1.1rem;color:rgba(255,255,255,.55);margin-bottom:.75rem;">Compliance License &amp; Asset Reminder Engine System</p>
     <p class="subtitle">
       A full-stack web portal for tracking and managing expiry dates of SSL certificates,
       licenses, certificates, and any custom asset type &mdash; with automated email reminders before items expire.
@@ -374,19 +375,19 @@
         <div class="feature-icon icon-green">&#128218;</div>
         <h3>Flexible Catalogs</h3>
         <p>Built-in types for <strong>Certificates</strong>, <strong>Licenses</strong>, and <strong>SSL Certs</strong>.
-           Add unlimited custom catalog types from the sidebar to fit your organization&rsquo;s needs.</p>
+           Add unlimited custom catalog types from the sidebar. Catalog-level admins can manage entries without being global admins.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon icon-orange">&#128231;</div>
         <h3>Email Reminders</h3>
-        <p>Configure SMTP settings, test the connection, and trigger reminders manually.
-           Per-item controls for toggle, days-before, and repeat count. Sends to the item&rsquo;s <code>owner</code> email.</p>
+        <p>Configure SMTP settings, test the connection, and <strong>send test emails</strong> to verify delivery.
+           Per-item controls for toggle, days-before, and repeat count. Sends formatted HTML emails to the item&rsquo;s owner.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon icon-purple">&#128101;</div>
-        <h3>User Management</h3>
-        <p>Create user accounts with <strong>Admin</strong> (full access) or <strong>Viewer</strong> (read-only) roles.
-           Per-catalog permission matrix: No Access, View, or Admin. Activate/deactivate accounts.</p>
+        <h3>User &amp; Permission Management</h3>
+        <p>Create user accounts with <strong>Admin</strong> or <strong>Viewer</strong> roles.
+           Per-catalog permission matrix: No Access, View, or Admin. Activate/deactivate accounts with clear login messages.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon icon-teal">&#128196;</div>
@@ -398,7 +399,7 @@
         <div class="feature-icon icon-red">&#128274;</div>
         <h3>Secure by Default</h3>
         <p>JWT authentication with 8-hour expiry. Passwords hashed with bcrypt.
-           Role-based access control on every API endpoint. Sessions cleared on tab close.</p>
+           Role-based access control on every API endpoint. Case-insensitive login. Inactive account detection.</p>
       </div>
     </div>
   </div>
@@ -427,6 +428,48 @@
       <div class="urgency-card urg-upcoming">
         <div class="count">&#128197; Upcoming</div>
         <div class="label">Expiring within 90 days</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ How It Works ═══ -->
+<section id="how-it-works" style="background:#fff;">
+  <div class="container">
+    <div class="section-header">
+      <h2>How It Works</h2>
+      <p>A simple, secure workflow from login to email reminders.</p>
+    </div>
+    <div class="steps" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Authenticate</h3>
+        <p>Users log in with username and password. The server validates credentials, checks if the account is active, and issues a <strong>JWT token</strong> (8h expiry) stored in browser session storage. Deactivated accounts receive a clear error message.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Dashboard Overview</h3>
+        <p>On login, the Dashboard automatically fetches all renewal items and groups them by urgency: <strong>Expired</strong>, <strong>Critical (&le;14d)</strong>, <strong>Warning (&le;30d)</strong>, and <strong>Upcoming (&le;90d)</strong>. Summary cards show counts per catalog.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Manage Catalogs</h3>
+        <p>The sidebar lists catalogs the user can access. Click a catalog to view, add, edit, or delete entries. Users with <strong>catalog-level Admin</strong> permission can manage entries without being global admins. Bulk CSV upload supports up to 500 rows.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>Granular Permissions</h3>
+        <p>Global admins see everything. Other users are assigned per-catalog roles: <strong>No Access</strong>, <strong>View</strong> (read-only), or <strong>Admin</strong> (full CRUD). Permissions are enforced on both the frontend UI and every backend API call.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <h3>Configure Email</h3>
+        <p>Admins set up SMTP on the settings page (host, port, TLS, credentials, sender). <strong>Test Connection</strong> verifies the config and <strong>Send Test Email</strong> confirms end-to-end delivery before going live.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <h3>Send Reminders</h3>
+        <p>When triggered, the reminder engine scans all items with reminders enabled. If an item&rsquo;s expiry is within the configured window, a formatted HTML email is sent to the owner. Supports configurable days-before and repeat count per item.</p>
       </div>
     </div>
   </div>
@@ -601,6 +644,12 @@
           </tr>
           <tr>
             <td><span class="method method-post">POST</span></td>
+            <td><code>/api/admin/smtp/test-email</code></td>
+            <td><span class="auth-badge auth-admin">Admin</span></td>
+            <td>Send test email</td>
+          </tr>
+          <tr>
+            <td><span class="method method-post">POST</span></td>
             <td><code>/api/admin/send-reminders</code></td>
             <td><span class="auth-badge auth-admin">Admin</span></td>
             <td>Send email reminders</td>
@@ -732,7 +781,7 @@ PORT=3002</code>
 <!-- ═══ Footer ═══ -->
 <footer>
   <p>
-    <strong style="color:#fff;">CLARES</strong> &mdash; Compliance License &amp; Asset Reminder Engine
+    <strong style="color:#fff;">CLARES</strong> &mdash; Compliance License &amp; Asset Reminder Engine System
     <br>
     Built with &#10084;&#65039; &middot;
     <a href="https://github.com/DevOpsArts/clares">GitHub</a>

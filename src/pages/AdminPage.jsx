@@ -23,6 +23,10 @@ export default function AdminPage() {
   const [sendMsg, setSendMsg]         = useState('')
   const [sendOk, setSendOk]           = useState(null)
   const [error, setError]             = useState('')
+  const [testEmail, setTestEmail]     = useState('')
+  const [sendingTest, setSendingTest] = useState(false)
+  const [testEmailMsg, setTestEmailMsg] = useState('')
+  const [testEmailOk, setTestEmailOk]   = useState(null)
 
   useEffect(() => {
     if (!isAdmin) return
@@ -52,7 +56,10 @@ export default function AdminPage() {
     setTesting(true)
     setTestMsg('')
     setTestOk(null)
+    setError('')
     try {
+      // Save settings first, then test
+      await api.saveSmtpConfig(smtp)
       const res = await api.testSmtpConnection()
       setTestMsg(res.message || 'Connection successful!')
       setTestOk(true)
@@ -177,6 +184,50 @@ export default function AdminPage() {
               {testOk ? '✓' : '✗'} {testMsg}
             </div>
           )}
+
+          {/* ── Send Test Email ── */}
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
+            <label style={{ fontSize: '0.84rem', fontWeight: 600, color: '#374151', marginBottom: '0.4rem', display: 'block' }}>
+              Send Test Email
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                type="email"
+                placeholder="recipient@example.com"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={sendingTest || !testEmail || !smtp.host}
+                onClick={async () => {
+                  setSendingTest(true)
+                  setTestEmailMsg('')
+                  setTestEmailOk(null)
+                  try {
+                    await api.saveSmtpConfig(smtp)
+                    const res = await api.sendTestEmail(testEmail)
+                    setTestEmailMsg(res.message || 'Sent!')
+                    setTestEmailOk(true)
+                  } catch (e) {
+                    setTestEmailMsg(e.message)
+                    setTestEmailOk(false)
+                  } finally {
+                    setSendingTest(false)
+                  }
+                }}
+              >
+                {sendingTest ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+            {testEmailMsg && (
+              <div className={`admin-msg admin-msg--${testEmailOk ? 'ok' : 'err'}`} style={{ marginTop: '0.5rem' }}>
+                {testEmailOk ? '✓' : '✗'} {testEmailMsg}
+              </div>
+            )}
+          </div>
         </form>
       </section>
 

@@ -48,7 +48,7 @@ export default function Login() {
               <span className="lp-logo-name">CLARES</span>
             </div>
 
-            <p className="lp-left-eyebrow">Compliance License &amp; Asset Reminder Engine</p>
+            <p className="lp-left-eyebrow">Compliance License &amp; Asset Reminder Engine System</p>
             <h1 className="lp-left-title">Welcome</h1>
             <p className="lp-left-sub">Your compliance renewal tracker — stay ahead of every expiry.</p>
           </div>

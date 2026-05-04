@@ -6,6 +6,17 @@ const bcrypt       = require('bcrypt')
 
 const router = Router()
 
+/** Build a nodemailer transporter */
+function createSmtpTransporter(cfg) {
+  return nodemailer.createTransport({
+    host:   cfg.host,
+    port:   cfg.port,
+    secure: cfg.secure,
+    auth:   cfg.username ? { user: cfg.username, pass: cfg.password } : undefined,
+    tls:    { rejectUnauthorized: false },
+  })
+}
+
 function daysUntil(dateStr) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -79,16 +90,50 @@ router.post('/smtp/test', requireAdmin, async (_req, res) => {
     const cfg = rows[0]
     if (!cfg?.host) return res.status(400).json({ error: 'SMTP not configured yet' })
 
-    const transporter = nodemailer.createTransport({
-      host:   cfg.host,
-      port:   cfg.port,
-      secure: cfg.secure,
-      auth:   { user: cfg.username, pass: cfg.password },
-    })
+    const transporter = createSmtpTransporter(cfg)
     await transporter.verify()
     res.json({ ok: true, message: 'SMTP connection successful' })
   } catch (err) {
+    console.error('SMTP test error:', err)
     res.status(400).json({ error: `SMTP test failed: ${err.message}` })
+  }
+})
+
+/** POST /api/admin/smtp/test-email — send a test email to a specific address */
+router.post('/smtp/test-email', requireAdmin, async (req, res) => {
+  const { to } = req.body
+  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    return res.status(400).json({ error: 'A valid email address is required' })
+  }
+  try {
+    const { rows } = await db.query(
+      `SELECT host, port, secure, username, password, from_email, from_name FROM smtp_config WHERE id=1`
+    )
+    const cfg = rows[0]
+    if (!cfg?.host) return res.status(400).json({ error: 'SMTP not configured yet. Save settings first.' })
+
+    const transporter = createSmtpTransporter(cfg)
+
+    await transporter.sendMail({
+      from:     `"${cfg.from_name}" <${cfg.from_email}>`,
+      envelope: { from: cfg.from_email, to },
+      to,
+      subject: '[CLARES] Test Email',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px">
+          <h2 style="color:#1d4ed8">CLARES — Test Email</h2>
+          <p>This is a test email from <strong>CLARES</strong> (Compliance License &amp; Asset Reminder Engine System).</p>
+          <p>If you received this, your SMTP settings are configured correctly.</p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0"/>
+          <p style="color:#9ca3af;font-size:12px">Sent from CLARES at ${new Date().toISOString()}</p>
+        </div>
+      `,
+    })
+
+    res.json({ ok: true, message: `Test email sent to ${to}` })
+  } catch (err) {
+    console.error('Send test email error:', err)
+    res.status(400).json({ error: `Failed to send test email: ${err.message}` })
   }
 })
 
@@ -106,12 +151,7 @@ router.post('/send-reminders', requireAdmin, async (_req, res) => {
     const cfg = smtpRes.rows[0]
     if (!cfg?.host) return res.status(400).json({ error: 'SMTP not configured. Go to Admin → SMTP Settings.' })
 
-    const transporter = nodemailer.createTransport({
-      host:   cfg.host,
-      port:   cfg.port,
-      secure: cfg.secure,
-      auth:   { user: cfg.username, pass: cfg.password },
-    })
+    const transporter = createSmtpTransporter(cfg)
 
     const due = renewalsRes.rows.filter((r) => {
       const days = daysUntil(r.expiry_date)
@@ -143,12 +183,13 @@ router.post('/send-reminders', requireAdmin, async (_req, res) => {
           <tr><td style="padding:4px 12px 4px 0;color:#6b7280">Status</td><td>${expiryLabel}</td></tr>
         </table>
         <p style="margin-top:16px">Please take action to renew this item before it expires.</p>
-        <p style="color:#9ca3af;font-size:12px">— CLARES · Compliance License &amp; Asset Reminder Engine</p>
+        <p style="color:#9ca3af;font-size:12px">— CLARES · Compliance License &amp; Asset Reminder Engine System</p>
       `
 
       try {
         await transporter.sendMail({
-          from:    `"${cfg.from_name}" <${cfg.from_email}>`,
+          from:     `"${cfg.from_name}" <${cfg.from_email}>`,
+          envelope: { from: cfg.from_email, to: r.owner },
           to:      r.owner,
           subject,
           html,

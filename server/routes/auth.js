@@ -23,14 +23,18 @@ router.post('/login', async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT id, username, password_hash, role, display_name
+      `SELECT id, username, password_hash, role, display_name, is_active
        FROM users
-       WHERE LOWER(username) = LOWER($1) AND is_active = true`,
+       WHERE LOWER(username) = LOWER($1)`,
       [username.trim()]
     )
 
     if (result.rowCount === 0) {
       return res.status(401).json({ error: 'Invalid credentials' })
+    }
+
+    if (!result.rows[0].is_active) {
+      return res.status(403).json({ error: 'Your account has been deactivated. Please contact an administrator.' })
     }
 
     const user  = result.rows[0]

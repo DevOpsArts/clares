@@ -5,6 +5,16 @@ const requireAdmin  = require('../middleware/requireAdmin')
 const router  = Router()
 const NAME_RE = /^[a-zA-Z0-9 ._()\-\/]{1,300}$/
 
+/** Check if user is global admin OR has catalog-level 'admin' for the given type */
+async function canEditCatalog(req, type) {
+  if (req.user.role === 'admin') return true
+  const perm = await db.query(
+    `SELECT role FROM user_catalog_permissions WHERE user_id = $1 AND catalog_slug = $2`,
+    [String(req.user.sub), type]
+  )
+  return perm.rowCount > 0 && perm.rows[0].role === 'admin'
+}
+
 async function validTypes() {
   const { rows } = await db.query(`SELECT slug FROM catalog_types`)
   return rows.map((r) => r.slug)
@@ -75,11 +85,15 @@ router.get('/type/:type', async (req, res) => {
   }
 })
 
-/** POST /api/renewals — create (admin only) */
-router.post('/', requireAdmin, async (req, res) => {
+/** POST /api/renewals — create (global admin or catalog admin) */
+router.post('/', async (req, res) => {
   const types  = await validTypes()
   const fields = sanitize(req.body, types)
   if (fields.error) return res.status(400).json({ error: fields.error })
+
+  if (!(await canEditCatalog(req, fields.type))) {
+    return res.status(403).json({ error: 'Admin access required for this catalog' })
+  }
 
   try {
     const { rows } = await db.query(
@@ -99,8 +113,8 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 })
 
-/** POST /api/renewals/bulk — bulk create (admin only) */
-router.post('/bulk', requireAdmin, async (req, res) => {
+/** POST /api/renewals/bulk — bulk create (global admin or catalog admin) */
+router.post('/bulk', async (req, res) => {
   const { rows: inputRows } = req.body
   if (!Array.isArray(inputRows) || inputRows.length === 0) {
     return res.status(400).json({ error: 'rows array is required and must not be empty' })
@@ -118,6 +132,11 @@ router.post('/bulk', requireAdmin, async (req, res) => {
   })
   if (bad.length > 0) {
     return res.status(400).json({ error: 'Validation errors in bulk data', details: bad })
+  }
+
+  // Check catalog permission for the type in the first row
+  if (good.length > 0 && !(await canEditCatalog(req, good[0].type))) {
+    return res.status(403).json({ error: 'Admin access required for this catalog' })
   }
 
   const client = await db.connect()
@@ -148,12 +167,18 @@ router.post('/bulk', requireAdmin, async (req, res) => {
   }
 })
 
-/** PUT /api/renewals/:id — update (admin only) */
-router.put('/:id', requireAdmin, async (req, res) => {
+/** PUT /api/renewals/:id — update (global admin or catalog admin) */
+router.put('/:id', async (req, res) => {
   const { id } = req.params
   const types   = await validTypes()
   const { type, name, environment, expiry_date, owner, notes,
           email_enabled, reminder_days_before, reminder_count } = req.body
+
+  // Determine catalog type from the existing renewal or the request
+  const catalogType = type || (await db.query('SELECT type FROM renewals WHERE id=$1', [id])).rows[0]?.type
+  if (catalogType && !(await canEditCatalog(req, catalogType))) {
+    return res.status(403).json({ error: 'Admin access required for this catalog' })
+  }
 
   if (type && !types.includes(type)) {
     return res.status(400).json({ error: `type "${type}" is not a valid catalog type` })
@@ -199,11 +224,17 @@ router.put('/:id', requireAdmin, async (req, res) => {
   }
 })
 
-/** DELETE /api/renewals/:id — delete (admin only) */
-router.delete('/:id', requireAdmin, async (req, res) => {
+/** DELETE /api/renewals/:id — delete (global admin or catalog admin) */
+router.delete('/:id', async (req, res) => {
   try {
-    const { rowCount } = await db.query('DELETE FROM renewals WHERE id = $1', [req.params.id])
-    if (!rowCount) return res.status(404).json({ error: 'Not found' })
+    // Look up the renewal's catalog type to check permission
+    const existing = await db.query('SELECT type FROM renewals WHERE id=$1', [req.params.id])
+    if (!existing.rows.length) return res.status(404).json({ error: 'Not found' })
+    if (!(await canEditCatalog(req, existing.rows[0].type))) {
+      return res.status(403).json({ error: 'Admin access required for this catalog' })
+    }
+
+    await db.query('DELETE FROM renewals WHERE id = $1', [req.params.id])
     res.json({ ok: true })
   } catch (err) {
     console.error('DELETE /renewals error:', err)

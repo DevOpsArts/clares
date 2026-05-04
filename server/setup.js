@@ -1,5 +1,5 @@
 /**
- * DB setup for CLARES (Compliance License & Asset Reminder Engine).
+ * DB setup for CLARES (Compliance License & Asset Reminder Engine System).
  * Safe to run multiple times — uses IF NOT EXISTS / IF EXISTS guards.
  *
  * Run: node server/setup.js

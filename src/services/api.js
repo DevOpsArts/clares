@@ -19,7 +19,7 @@ async function request(path, options = {}) {
 
   const res = await fetch(`/api${path}`, { ...options, headers })
 
-  if (res.status === 401) {
+  if (res.status === 401 && path !== '/auth/login') {
     sessionStorage.removeItem(SESSION_KEY)
     window.location.replace('/login')
     throw new Error('SESSION_EXPIRED')
@@ -52,6 +52,7 @@ export const api = {
   getSmtpConfig:       ()     => request('/admin/smtp'),
   saveSmtpConfig:      (data) => request('/admin/smtp', { method: 'PUT', body: JSON.stringify(data) }),
   testSmtpConnection:  ()     => request('/admin/smtp/test', { method: 'POST' }),
+  sendTestEmail:       (to)   => request('/admin/smtp/test-email', { method: 'POST', body: JSON.stringify({ to }) }),
   sendReminders:       ()     => request('/admin/send-reminders', { method: 'POST' }),
 
   // ── User management ───────────────────────────────────────

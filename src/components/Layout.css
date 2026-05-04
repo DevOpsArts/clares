@@ -64,6 +64,91 @@
   gap: 1rem;
 }
 
+/* ── User dropdown menu ── */
+.layout-user-menu {
+  position: relative;
+}
+
+.layout-user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: none;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.layout-user-trigger:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.layout-user-chevron {
+  color: #9ca3af;
+  transition: transform 0.2s;
+}
+.layout-user-menu:hover .layout-user-chevron {
+  transform: rotate(180deg);
+}
+
+.layout-user-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 0.35rem;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, visibility 0.15s, transform 0.15s;
+  z-index: 300;
+}
+.layout-user-menu:hover .layout-user-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.layout-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+.layout-dropdown-item:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+.layout-dropdown-item--danger {
+  color: #dc2626;
+}
+.layout-dropdown-item--danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.layout-dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0.3rem 0.5rem;
+}
+
 .layout-nav-user {
   display: flex;
   align-items: center;
@@ -85,26 +170,7 @@
   letter-spacing: 0.04em;
 }
 
-.layout-nav-logout {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.45rem 0.875rem;
-  background: none;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  white-space: nowrap;
-}
-.layout-nav-logout:hover {
-  background: #f3f4f6;
-  color: #111827;
-  border-color: #d1d5db;
-}
+/* (dropdown styles above replace the old logout button) */
 
 /* ── Body (sidebar + content) ── */
 .layout-body {
@@ -181,9 +247,6 @@
   }
 
   .layout-main { padding: 1.25rem; }
-
-  /* Hide "Sign out" text, keep icon only */
-  .layout-nav-logout span { display: none; }
 }
 
 /* ── Small mobile (≤ 480px) ── */

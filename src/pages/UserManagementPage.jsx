@@ -33,6 +33,7 @@ export default function UserManagementPage() {
   const [catalogs, setCatalogs]           = useState([])
   const [loading, setLoading]             = useState(true)
   const [pageError, setPageError]         = useState('')
+  const [permsKey, setPermsKey]            = useState(0)
 
   // Add user
   const [showAdd, setShowAdd]             = useState(false)
@@ -142,6 +143,8 @@ export default function UserManagementPage() {
       ])
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
       setEditUser(null)
+      // Force CatalogAccessSummary to re-fetch
+      setPermsKey((k) => k + 1)
     } catch (e) {
       setEditError(e.message)
     } finally {
@@ -194,7 +197,7 @@ export default function UserManagementPage() {
                 <td><RoleBadge role={u.role} /></td>
                 <td><StatusBadge active={u.is_active} /></td>
                 <td>
-                  <CatalogAccessSummary userId={u.id} />
+                  <CatalogAccessSummary userId={u.id} key={`${u.id}-${permsKey}`} />
                 </td>
                 <td>
                   <button className="btn-icon btn-icon--edit" title="Edit" onClick={() => openEdit(u)}>

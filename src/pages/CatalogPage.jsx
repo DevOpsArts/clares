@@ -57,9 +57,10 @@ function parseCsv(text) {
 export default function CatalogPage() {
   const { type }        = useParams()
   const navigate        = useNavigate()
-  const { currentUser, hasCatalogAccess } = useAuth()
+  const { currentUser, hasCatalogAccess, getCatalogRole } = useAuth()
   const isAdmin         = currentUser?.role === 'admin'
   const hasAccess       = hasCatalogAccess(type)
+  const canEdit         = isAdmin || getCatalogRole(type) === 'admin'
 
   const [catalogLabel, setCatalogLabel]   = useState(type)
   const [entries, setEntries]             = useState([])
@@ -227,7 +228,7 @@ export default function CatalogPage() {
             {expiredCount  > 0 && <span className="catalog-badge-danger"> · {expiredCount} expired</span>}
           </p>
         </div>
-        {isAdmin && (
+        {canEdit && (
           <div className="catalog-header-actions">
             <button className="btn-secondary" onClick={() => { setShowBulk((v) => !v); setBulkResult(null); setCsvRows(null); setCsvError('') }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -249,7 +250,7 @@ export default function CatalogPage() {
       {error && <div className="form-error" style={{ marginBottom: '1rem' }}>{error}</div>}
 
       {/* ── Bulk Upload panel ── */}
-      {showBulk && isAdmin && (
+      {showBulk && canEdit && (
         <div className="bulk-panel">
           <div className="bulk-panel-header">
             <h3>Bulk Upload via CSV</h3>
@@ -308,7 +309,7 @@ export default function CatalogPage() {
         <div className="catalog-loading">Loading…</div>
       ) : entries.length === 0 ? (
         <div className="catalog-empty">
-          No entries yet.{isAdmin && ' Click "Add Entry" to get started.'}
+          No entries yet.{canEdit && ' Click "Add Entry" to get started.'}
         </div>
       ) : (
         <div className="renewals-table-wrap">
@@ -322,7 +323,7 @@ export default function CatalogPage() {
                 <th>Owner / Email</th>
                 <th>Email Reminder</th>
                 <th>Notes</th>
-                {isAdmin && <th></th>}
+                {canEdit && <th></th>}
               </tr>
             </thead>
             <tbody>
@@ -342,7 +343,7 @@ export default function CatalogPage() {
                       }
                     </td>
                     <td className="cell-notes">{r.notes || '—'}</td>
-                    {isAdmin && (
+                    {canEdit && (
                       <td className="cell-actions">
                         <button className="btn-icon btn-icon--edit" title="Edit" onClick={() => openEdit(r)}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

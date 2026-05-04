@@ -1,6 +1,22 @@
-# CLARES — Compliance License & Asset Reminder Engine
+# CLARES — Compliance License & Asset Reminder Engine System
 
 A full-stack web portal for tracking and managing expiry dates of SSL certificates, licenses, certificates, and any custom asset type. Sends email reminders before items expire.
+
+---
+
+## How It Works
+
+1. **Login** — Users authenticate with username/password. The server issues a JWT token (8h expiry) stored in `sessionStorage`. Deactivated accounts receive a clear "account deactivated" message.
+
+2. **Dashboard** — On login, users land on the Dashboard which automatically fetches all renewal items and groups them by urgency: **Expired**, **Critical (≤14 days)**, **Warning (≤30 days)**, and **Upcoming (≤90 days)**. Summary stat cards show counts per catalog type.
+
+3. **Catalogs** — The sidebar lists all catalog types the user has access to. Clicking a catalog opens its item list. Users with **Admin** role (global or catalog-level) can add, edit, delete, and bulk-upload entries. **Viewers** can only browse.
+
+4. **Permissions** — Global admins see everything. Other users only see catalogs they've been granted access to via the per-catalog permission matrix (No Access / View / Admin). Catalog-level admins can manage entries in their assigned catalogs without being global admins.
+
+5. **Email Reminders** — Admins configure SMTP settings (host, port, TLS, credentials, sender address) from the SMTP Settings page. When reminders are triggered, the system scans all renewal items with `remind = true`, checks if the expiry date is within the configured `remind_days_before` window, and sends a formatted HTML email to the item's owner.
+
+6. **Deployment** — The app is containerized with Docker (multi-arch amd64/arm64) and deployed via Helm on Kubernetes. The frontend is built by Vite into static files served by Express alongside the API.
 
 ---
 
@@ -164,22 +180,33 @@ This starts both servers concurrently:
 - Per-catalog item management (add, edit, delete)
 - **Bulk CSV upload** — download template, upload up to 500 rows at once
 - Per-item **email reminder** settings (toggle, days before, repeat count)
+- Catalog-level admin: users with catalog "Admin" permission can add/edit/delete entries without being global admins
 
 ### Email Reminders
 - Configure SMTP (host, port, TLS, credentials, from address)
-- Test connection before saving
+- Test SMTP connection and **send test emails** to verify delivery
 - Trigger reminders manually from Admin page
-- Sends to item `owner` field (must contain `@`)
+- Sends formatted HTML emails to item `owner` field (must contain `@`)
 
 ### User Management *(Admin only)*
 - Create and manage user accounts
-- Assign role: **Admin** (full access) or **Viewer** (read-only)
-- Per-catalog permission matrix (No Access / View / Admin)
-- Activate / deactivate accounts
+- Assign global role: **Admin** (full access) or **Viewer** (read-only)
+- Per-catalog permission matrix: **No Access** / **View** / **Admin**
+- Catalog-level admin grants add/edit/delete for specific catalogs
+- Activate / deactivate accounts (deactivated users see a clear message on login)
+
+### Security & Auth
+- JWT authentication with configurable expiry (default 8h)
+- Passwords hashed with bcrypt (12 rounds)
+- Role-based access control on every API endpoint
+- Case-insensitive login
+- Inactive account detection with user-friendly error message
+- Sessions stored in `sessionStorage` — cleared on tab close
 
 ### UI
 - Responsive layout — sidebar collapses on mobile, toggles on desktop
 - Collapsible left sidebar via hamburger button
+- Top-right dropdown menu for admin settings and sign out
 - Navy/white color scheme
 
 ---
@@ -191,16 +218,17 @@ This starts both servers concurrently:
 | POST   | `/api/auth/login`                 | Public   | Login, returns JWT             |
 | GET    | `/api/renewals`                   | Required | All renewals                   |
 | GET    | `/api/renewals/type/:type`        | Required | Renewals by catalog type       |
-| POST   | `/api/renewals`                   | Admin    | Create renewal                 |
-| PUT    | `/api/renewals/:id`               | Admin    | Update renewal                 |
-| DELETE | `/api/renewals/:id`               | Admin    | Delete renewal                 |
-| POST   | `/api/renewals/bulk`              | Admin    | Bulk create (max 500 rows)     |
+| POST   | `/api/renewals`                   | Admin*   | Create renewal                 |
+| PUT    | `/api/renewals/:id`               | Admin*   | Update renewal                 |
+| DELETE | `/api/renewals/:id`               | Admin*   | Delete renewal                 |
+| POST   | `/api/renewals/bulk`              | Admin*   | Bulk create (max 500 rows)     |
 | GET    | `/api/catalog-types`              | Required | List catalog types             |
 | POST   | `/api/catalog-types`              | Admin    | Add custom catalog type        |
 | DELETE | `/api/catalog-types/:slug`        | Admin    | Delete custom catalog type     |
 | GET    | `/api/admin/smtp`                 | Admin    | Get SMTP config                |
 | PUT    | `/api/admin/smtp`                 | Admin    | Save SMTP config               |
 | POST   | `/api/admin/smtp/test`            | Admin    | Test SMTP connection           |
+| POST   | `/api/admin/smtp/test-email`      | Admin    | Send test email                |
 | POST   | `/api/admin/send-reminders`       | Admin    | Send email reminders           |
 | GET    | `/api/admin/users`                | Admin    | List users                     |
 | POST   | `/api/admin/users`                | Admin    | Create user                    |
@@ -210,9 +238,28 @@ This starts both servers concurrently:
 
 ---
 
-## Session Storage
+> **Admin\*** = Global admin OR catalog-level admin for the target catalog.
 
-User sessions are stored in browser `sessionStorage` under the key `clares_session`. Sessions are cleared on tab/window close or on sign-out.
+---
+
+## Deployment
+
+### Docker
+
+```bash
+docker build -t clares-engine .
+docker run -p 3002:3002 --env-file .env clares-engine
+```
+
+### Kubernetes (Helm)
+
+```bash
+helm install clares ./helm/clares-engine \
+  -f ./helm/clares-engine/values-minikube.yaml \
+  --namespace clares --create-namespace
+```
+
+The Helm chart supports `values-minikube.yaml` for local development and `values-prod.yaml` for production. Configuration is injected via ConfigMap and Secret.
 
 ---
 

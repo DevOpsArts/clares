@@ -130,19 +130,6 @@ export default function Sidebar({ onClose }) {
               <PlusIcon /> Add Catalog
             </button>
           )}
-
-          {isAdmin && (
-            <div className="sidebar-bottom">
-              <div className="sidebar-divider" />
-              <div className="sidebar-section-label">Settings</div>
-              <NavLink to="/users" className={({ isActive }) => `sidebar-link${isActive ? ' sidebar-link--active' : ''}`} onClick={onClose}>
-                <UsersIcon /> User Management
-              </NavLink>
-              <NavLink to="/admin" className={({ isActive }) => `sidebar-link${isActive ? ' sidebar-link--active' : ''}`} onClick={onClose}>
-                <AdminIcon /> Admin
-              </NavLink>
-            </div>
-          )}
         </nav>
       </aside>
 
