@@ -25,7 +25,15 @@ app.use('/api/admin',         authenticate, adminRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 
-app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
+// Serve static frontend in production
+const distPath = path.join(__dirname, '../dist')
+app.use(express.static(distPath))
+
+// SPA fallback – serve index.html for non-API routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next()
+  res.sendFile(path.join(distPath, 'index.html'))
+})
 
 app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err)

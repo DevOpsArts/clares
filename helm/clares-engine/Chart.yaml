@@ -1,0 +1,6 @@
+apiVersion: v2
+name: clares-engine
+description: Helm chart for CLARES Engine - Catalog License And Renewal Engine System
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

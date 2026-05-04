@@ -1,0 +1,45 @@
+# Production values - update these for your environment
+replicaCount: 2
+
+image:
+  repository: devopsart1/clares-engine
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3002
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
+  hosts:
+    - host: clares.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+env:
+  DB_HOST: "XXXXXXX.postgres.database.azure.com"
+  DB_PORT: "5432"
+  DB_NAME: "XXXXXXX"
+  DB_USER: "XXXXXX"
+  JWT_EXPIRES_IN: "8h"
+  PORT: "3002"
+  CLIENT_ORIGIN: "https://clares.example.com"
+
+secrets:
+  DB_PASSWORD: "CHANGE_ME"
+  JWT_SECRET: "CHANGE_ME"

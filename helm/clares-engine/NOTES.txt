@@ -1,0 +1,25 @@
+1. This chart deploys the CLARES Engine application.
+
+## Install
+
+```bash
+helm upgrade --install clares ./helm/clares-engine \
+  -f helm/clares-engine/values-prod.yaml \
+  --namespace clares --create-namespace
+```
+
+## Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `image.repository` | Docker image repo | `devopsart1/clares-engine` |
+| `image.tag` | Docker image tag | `latest` |
+| `env.DB_HOST` | PostgreSQL host | `""` |
+| `env.DB_PORT` | PostgreSQL port | `5432` |
+| `env.DB_NAME` | Database name | `""` |
+| `env.DB_USER` | Database user | `""` |
+| `env.JWT_EXPIRES_IN` | JWT token expiry | `8h` |
+| `env.PORT` | Server port | `3002` |
+| `env.CLIENT_ORIGIN` | CORS allowed origin | `""` |
+| `secrets.DB_PASSWORD` | Database password | `""` |
+| `secrets.JWT_SECRET` | JWT signing secret | `""` |

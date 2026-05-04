@@ -1,0 +1,47 @@
+replicaCount: 1
+
+image:
+  repository: devopsart1/clares-engine
+  tag: "v1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3002
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: clares.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+env:
+  DB_HOST: ""
+  DB_PORT: "5432"
+  DB_NAME: ""
+  DB_USER: ""
+  JWT_EXPIRES_IN: "8h"
+  PORT: "3002"
+  CLIENT_ORIGIN: ""
+
+secrets:
+  DB_PASSWORD: ""
+  JWT_SECRET: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
