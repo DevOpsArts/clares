@@ -32,10 +32,10 @@ resources:
     memory: 512Mi
 
 env:
-  DB_HOST: "XXXXXXXX"
+  DB_HOST: "your-db-host"
   DB_PORT: "5432"
-  DB_NAME: "YYYYYYYY"
-  DB_USER: "username"
+  DB_NAME: "your-database"
+  DB_USER: "your-username"
   SSL_MODE: "true"
   JWT_EXPIRES_IN: "8h"
   PORT: "3002"
