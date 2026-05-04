@@ -1,5 +1,7 @@
 replicaCount: 1
 
+fullnameOverride: clares
+
 image:
   repository: devopsart1/clares-engine
   tag: "v1.0.17"

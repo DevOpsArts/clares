@@ -1,6 +1,8 @@
 # Production values - update these for your environment
 replicaCount: 2
 
+fullnameOverride: clares
+
 image:
   repository: devopsart1/clares-engine
   tag: "latest"
