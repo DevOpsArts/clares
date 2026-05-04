@@ -1,0 +1,8 @@
+<svg width="460" height="120" viewBox="0 0 460 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="460" height="120" rx="16" fill="#1e3a5f"/>
+  <rect x="24" y="24" width="72" height="72" rx="14" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+  <path d="M60 38 L40 45 V58 C40 70 47.5 80 60 83 C72.5 80 80 70 80 58 V45 Z" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M49 60 L56 67 L71 51" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="116" y="58" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="800" fill="#ffffff" letter-spacing="2">CLARES</text>
+  <text x="116" y="82" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="rgba(255,255,255,0.6)">Compliance License &amp; Asset Reminder Engine System</text>
+</svg>
