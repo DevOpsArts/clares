@@ -28,6 +28,7 @@ router.get('/smtp', requireAdmin, async (_req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT host, port, secure, username, from_email, from_name,
+              auto_remind_enabled, auto_remind_hour,
               CASE WHEN password <> '' THEN '••••••••' ELSE '' END AS password
        FROM smtp_config WHERE id = 1`
     )
@@ -55,21 +56,29 @@ router.put('/smtp', requireAdmin, async (req, res) => {
     if (!password || password === '••••••••') {
       pwQuery = `UPDATE smtp_config SET
         host=$1, port=$2, secure=$3, username=$4,
-        from_email=$5, from_name=$6, updated_at=now()
-        WHERE id=1 RETURNING host, port, secure, username, from_email, from_name`
+        from_email=$5, from_name=$6,
+        auto_remind_enabled=COALESCE($7, auto_remind_enabled),
+        auto_remind_hour=COALESCE($8, auto_remind_hour),
+        updated_at=now()
+        WHERE id=1 RETURNING host, port, secure, username, from_email, from_name, auto_remind_enabled, auto_remind_hour`
       pwParams = [
         host.trim(), parseInt(port, 10) || 587, !!secure,
         (username || '').trim(), from_email.trim(), (from_name || 'CLARES').trim(),
+        req.body.auto_remind_enabled ?? null, req.body.auto_remind_hour ?? null,
       ]
     } else {
       pwQuery = `UPDATE smtp_config SET
         host=$1, port=$2, secure=$3, username=$4, password=$5,
-        from_email=$6, from_name=$7, updated_at=now()
-        WHERE id=1 RETURNING host, port, secure, username, from_email, from_name`
+        from_email=$6, from_name=$7,
+        auto_remind_enabled=COALESCE($8, auto_remind_enabled),
+        auto_remind_hour=COALESCE($9, auto_remind_hour),
+        updated_at=now()
+        WHERE id=1 RETURNING host, port, secure, username, from_email, from_name, auto_remind_enabled, auto_remind_hour`
       pwParams = [
         host.trim(), parseInt(port, 10) || 587, !!secure,
         (username || '').trim(), password,
         from_email.trim(), (from_name || 'CLARES').trim(),
+        req.body.auto_remind_enabled ?? null, req.body.auto_remind_hour ?? null,
       ]
     }
 
@@ -137,12 +146,12 @@ router.post('/smtp/test-email', requireAdmin, async (req, res) => {
   }
 })
 
-/** POST /api/admin/send-reminders — send emails for items within their reminder window */
+/** POST /api/admin/send-reminders — send emails for items due on their calculated reminder dates */
 router.post('/send-reminders', requireAdmin, async (_req, res) => {
   try {
     const [smtpRes, renewalsRes] = await Promise.all([
       db.query(`SELECT host, port, secure, username, password, from_email, from_name FROM smtp_config WHERE id=1`),
-      db.query(`SELECT id, type, name, environment, expiry_date, owner, email_enabled, reminder_days_before
+      db.query(`SELECT id, type, name, environment, expiry_date, owner, email_enabled, reminder_days_before, reminder_count
                 FROM renewals
                 WHERE email_enabled = true AND owner IS NOT NULL AND owner LIKE '%@%'
                 ORDER BY expiry_date ASC`),
@@ -152,20 +161,46 @@ router.post('/send-reminders', requireAdmin, async (_req, res) => {
     if (!cfg?.host) return res.status(400).json({ error: 'SMTP not configured. Go to Admin → SMTP Settings.' })
 
     const transporter = createSmtpTransporter(cfg)
+    const todayStr = new Date().toISOString().slice(0, 10)
 
-    const due = renewalsRes.rows.filter((r) => {
-      const days = daysUntil(r.expiry_date)
-      return days <= r.reminder_days_before
-    })
+    // Get already-sent logs
+    const ids = renewalsRes.rows.map(r => r.id)
+    const { rows: logs } = ids.length
+      ? await db.query(`SELECT renewal_id, reminder_num FROM reminder_logs WHERE renewal_id = ANY($1)`, [ids])
+      : { rows: [] }
+    const sentSet = new Set(logs.map(l => `${l.renewal_id}:${l.reminder_num}`))
 
-    if (due.length === 0) {
-      return res.json({ ok: true, sent: 0, message: 'No items currently in reminder window.' })
+    // Calculate which items have a reminder due today or past-due (not yet sent)
+    function getReminderDates(expiryDate, daysBefore, count) {
+      const expiry = new Date(expiryDate); expiry.setHours(0, 0, 0, 0)
+      const interval = Math.floor(daysBefore / count)
+      const dates = []
+      for (let i = 0; i < count; i++) {
+        const d = new Date(expiry)
+        d.setDate(d.getDate() - daysBefore + (i * interval))
+        dates.push(d.toISOString().slice(0, 10))
+      }
+      return dates
+    }
+
+    const toSend = []
+    for (const r of renewalsRes.rows) {
+      const dates = getReminderDates(r.expiry_date, r.reminder_days_before, r.reminder_count)
+      for (let i = 0; i < dates.length; i++) {
+        if (dates[i] <= todayStr && !sentSet.has(`${r.id}:${i + 1}`)) {
+          toSend.push({ ...r, reminderNum: i + 1, totalReminders: r.reminder_count })
+        }
+      }
+    }
+
+    if (toSend.length === 0) {
+      return res.json({ ok: true, sent: 0, message: 'No items currently due for reminders.' })
     }
 
     let sent = 0
     const errors = []
 
-    for (const r of due) {
+    for (const r of toSend) {
       const days = daysUntil(r.expiry_date)
       const subject = `[CLARES] ${r.type.toUpperCase()} "${r.name}" expires in ${days < 0 ? 'OVERDUE' : `${days} day(s)`}`
       const expiryLabel = days < 0
@@ -174,7 +209,7 @@ router.post('/send-reminders', requireAdmin, async (_req, res) => {
 
       const html = `
         <p>Hello,</p>
-        <p>This is a reminder that the following item is expiring soon:</p>
+        <p>This is reminder ${r.reminderNum} of ${r.totalReminders} that the following item is expiring soon:</p>
         <table style="border-collapse:collapse;font-size:14px">
           <tr><td style="padding:4px 12px 4px 0;color:#6b7280">Type</td><td><strong>${r.type}</strong></td></tr>
           <tr><td style="padding:4px 12px 4px 0;color:#6b7280">Name</td><td><strong>${r.name}</strong></td></tr>
@@ -194,6 +229,10 @@ router.post('/send-reminders', requireAdmin, async (_req, res) => {
           subject,
           html,
         })
+        await db.query(
+          `INSERT INTO reminder_logs (renewal_id, reminder_num) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [r.id, r.reminderNum]
+        )
         sent++
       } catch (e) {
         errors.push({ name: r.name, error: e.message })
@@ -203,9 +242,9 @@ router.post('/send-reminders', requireAdmin, async (_req, res) => {
     res.json({
       ok: true,
       sent,
-      total: due.length,
+      total: toSend.length,
       errors: errors.length ? errors : undefined,
-      message: `Sent ${sent} of ${due.length} reminder email(s).${errors.length ? ` ${errors.length} failed.` : ''}`,
+      message: `Sent ${sent} of ${toSend.length} reminder email(s).${errors.length ? ` ${errors.length} failed.` : ''}`,
     })
   } catch (err) {
     console.error('POST /admin/send-reminders error:', err)

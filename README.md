@@ -16,9 +16,11 @@ A full-stack web portal for tracking and managing expiry dates of SSL certificat
 
 4. **Permissions** — Global admins see everything. Other users only see catalogs they've been granted access to via the per-catalog permission matrix (No Access / View / Admin). Catalog-level admins can manage entries in their assigned catalogs without being global admins.
 
-5. **Email Reminders** — Admins configure SMTP settings (host, port, TLS, credentials, sender address) from the SMTP Settings page. When reminders are triggered, the system scans all renewal items with `remind = true`, checks if the expiry date is within the configured `remind_days_before` window, and sends a formatted HTML email to the item's owner.
+5. **Email Reminders** — Admins configure SMTP settings (host, port, TLS, credentials, sender address) from the SMTP Settings page. Each item has per-entry reminder settings: enable/disable, days before expiry, and repeat count. The system calculates exact reminder dates by evenly spacing the repeat count within the days-before window. For example, an item expiring June 10 with "30 days before, repeat 3 times" gets reminders on May 11, May 21, and May 31. Reminders can be triggered manually or run automatically via the built-in daily scheduler.
 
-6. **Deployment** — The app is containerized with Docker (multi-arch amd64/arm64) and deployed via Helm on Kubernetes. The frontend is built by Vite into static files served by Express alongside the API.
+6. **Automatic Reminder Scheduler** — When enabled in Admin Settings, a background scheduler checks every 60 seconds and sends reminders once per day at the configured hour (server time). A `reminder_logs` table tracks which reminder number has been sent for each item, preventing duplicates. Past-due reminders that were missed (e.g., server was down) are caught up automatically.
+
+7. **Deployment** — The app is containerized with Docker (multi-arch amd64/arm64) and deployed via Helm on Kubernetes. The frontend is built by Vite into static files served by Express alongside the API.
 
 ---
 
@@ -86,7 +88,8 @@ npm run setup-db
 This creates:
 - `renewals` — tracked items with expiry dates
 - `catalog_types` — asset categories (ssl, license, certificate + any custom)
-- `smtp_config` — email sender configuration
+- `smtp_config` — email sender configuration + auto-reminder schedule
+- `reminder_logs` — tracks which reminder emails have been sent (prevents duplicates)
 - `user_catalog_permissions` — per-user access control per catalog
 
 > Re-running `setup-db` is safe — all migrations are idempotent.
@@ -187,8 +190,19 @@ This starts both servers concurrently:
 ### Email Reminders
 - Configure SMTP (host, port, TLS, credentials, from address)
 - Test SMTP connection and **send test emails** to verify delivery
+- Per-item reminder settings: toggle on/off, days before expiry, repeat count
+- **Smart reminder scheduling**: calculates exact send dates by evenly spacing repeats within the reminder window (e.g., 30 days / 3 repeats = reminders at 30, 20, and 10 days before expiry)
 - Trigger reminders manually from Admin page
 - Sends formatted HTML emails to item `owner` field (must contain `@`)
+- Emails include reminder number (e.g., "reminder 2 of 3")
+
+### Automatic Reminders
+- Enable/disable automatic daily reminders from Admin Settings
+- Configure the send hour (0–23, server time)
+- Background scheduler checks every 60 seconds, fires once per day at the configured hour
+- `reminder_logs` table prevents duplicate sends — each reminder number per item is tracked
+- Missed reminders (server downtime) are automatically caught up on next run
+- Request logging for all API calls visible in pod logs
 
 ### User Management *(Admin only)*
 - Create and manage user accounts
@@ -257,7 +271,7 @@ docker run -p 3002:3002 --env-file .env clares-engine
 
 # Build multi-arch and push to registry
 docker buildx build --platform linux/amd64,linux/arm64 \
-  -t devopsart1/clares-engine:v1.0.17 \
+  -t devopsart1/clares-engine:v1.0.18 \
   -t devopsart1/clares-engine:latest --push .
 ```
 
@@ -288,7 +302,7 @@ helm/clares-engine/
 | Parameter              | Description                      | Default                |
 |------------------------|----------------------------------|------------------------|
 | `image.repository`     | Docker image                     | `devopsart1/clares-engine` |
-| `image.tag`            | Image tag                        | `v1.0.17`              |
+| `image.tag`            | Image tag                        | `v1.0.18`              |
 | `env.DB_HOST`          | PostgreSQL host                  | `""`                   |
 | `env.DB_PORT`          | PostgreSQL port                  | `5432`                 |
 | `env.DB_NAME`          | Database name                    | `""`                   |
@@ -335,7 +349,7 @@ This creates all tables (`users`, `renewals`, `catalog_types`, `smtp_config`, `u
 ```bash
 helm upgrade clares ./helm/clares-engine \
   -f ./helm/clares-engine/values-minikube.yaml \
-  --set image.tag=v1.0.17 \
+  --set image.tag=v1.0.18 \
   --namespace clares
 
 # Verify rollout

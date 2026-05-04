@@ -130,7 +130,24 @@ async function setup() {
     await client.query(`
       INSERT INTO smtp_config (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
     `)
+
+    // Add auto-reminder columns (migration for existing installs)
+    await client.query(`ALTER TABLE smtp_config ADD COLUMN IF NOT EXISTS auto_remind_enabled BOOLEAN NOT NULL DEFAULT false;`)
+    await client.query(`ALTER TABLE smtp_config ADD COLUMN IF NOT EXISTS auto_remind_hour INTEGER NOT NULL DEFAULT 8;`)
+
     console.log('✓ smtp_config table ready.')
+
+    // ── reminder_logs (tracks which reminders have been sent) ─────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reminder_logs (
+        id          SERIAL PRIMARY KEY,
+        renewal_id  INTEGER NOT NULL REFERENCES renewals(id) ON DELETE CASCADE,
+        reminder_num INTEGER NOT NULL,
+        sent_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+        UNIQUE(renewal_id, reminder_num)
+      );
+    `)
+    console.log('✓ reminder_logs table ready.')
 
     // ── user_catalog_permissions ─────────────────────────────────────────
     await client.query(`

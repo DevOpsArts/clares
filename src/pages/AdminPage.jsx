@@ -6,6 +6,7 @@ import './AdminPage.css'
 const EMPTY_SMTP = {
   host: '', port: 587, secure: false,
   username: '', password: '', from_email: '', from_name: 'CLARES',
+  auto_remind_enabled: false, auto_remind_hour: 8,
 }
 
 export default function AdminPage() {
@@ -231,6 +232,62 @@ export default function AdminPage() {
         </form>
       </section>
 
+      {/* ── Auto-Reminder Schedule ── */}
+      <section className="admin-card">
+        <div className="admin-card-header">
+          <div className="admin-card-icon" style={{ background: smtp.auto_remind_enabled ? '#dcfce7' : undefined, color: smtp.auto_remind_enabled ? '#16a34a' : undefined }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div>
+            <h2 className="admin-card-title">Automatic Reminders</h2>
+            <p className="admin-card-sub">
+              When enabled, CLARES will automatically send reminder emails once per day at the configured hour (server time).
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.75rem' }}>
+          <label className="toggle-label" style={{ flex: 'none' }}>
+            <span>Enable automatic reminders</span>
+            <label className="toggle">
+              <input type="checkbox" checked={!!smtp.auto_remind_enabled}
+                onChange={(e) => setSmtp({ ...smtp, auto_remind_enabled: e.target.checked })} />
+              <span className="toggle-slider" />
+            </label>
+          </label>
+        </div>
+
+        {smtp.auto_remind_enabled && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <label style={{ fontSize: '0.84rem', fontWeight: 600, color: '#374151' }}>Send at hour (0–23):</label>
+            <input type="number" min={0} max={23} value={smtp.auto_remind_hour}
+              onChange={(e) => setSmtp({ ...smtp, auto_remind_hour: Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)) })}
+              style={{ width: '5rem' }} />
+            <span style={{ fontSize: '0.82rem', color: '#6b7280' }}>
+              ({String(smtp.auto_remind_hour).padStart(2, '0')}:00 server time)
+            </span>
+          </div>
+        )}
+
+        <div style={{ marginTop: '0.75rem' }}>
+          <button type="button" className="btn-primary" disabled={saving}
+            onClick={async () => {
+              setSaving(true); setSaveMsg(''); setError('')
+              try {
+                await api.saveSmtpConfig(smtp)
+                setSaveMsg('Auto-reminder settings saved.')
+                setTimeout(() => setSaveMsg(''), 3000)
+              } catch (e) { setError(e.message) }
+              finally { setSaving(false) }
+            }}>
+            {saving ? 'Saving…' : 'Save Schedule'}
+          </button>
+          {saveMsg && <div className="admin-msg admin-msg--ok" style={{ marginTop: '0.5rem' }}>{saveMsg}</div>}
+        </div>
+      </section>
+
       {/* ── Send reminders ── */}
       <section className="admin-card">
         <div className="admin-card-header">
@@ -243,8 +300,8 @@ export default function AdminPage() {
           <div>
             <h2 className="admin-card-title">Send Reminder Emails</h2>
             <p className="admin-card-sub">
-              Triggers an email for every enabled item currently within its reminder window.
-              The owner email is taken from the "Owner Email" field on each entry.
+              Manually trigger reminder emails for all enabled items currently within their reminder window.
+              Use "Automatic Reminders" above to schedule daily sends.
             </p>
           </div>
         </div>

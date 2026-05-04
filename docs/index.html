@@ -346,7 +346,8 @@
     <p style="font-size:1.1rem;color:rgba(255,255,255,.55);margin-bottom:.75rem;">Compliance License &amp; Asset Reminder Engine System</p>
     <p class="subtitle">
       A full-stack web portal for tracking and managing expiry dates of SSL certificates,
-      licenses, certificates, and any custom asset type &mdash; with automated email reminders before items expire.
+      licenses, certificates, and any custom asset type &mdash; with smart automated email reminders
+      that calculate exact send dates based on per-item settings.
     </p>
     <div class="cta-group">
       <a href="https://github.com/DevOpsArts/clares" class="btn btn-primary" target="_blank">
@@ -380,9 +381,15 @@
       </div>
       <div class="feature-card">
         <div class="feature-icon icon-orange">&#128231;</div>
-        <h3>Email Reminders</h3>
-        <p>Configure SMTP settings, test the connection, and <strong>send test emails</strong> to verify delivery.
-           Per-item controls for toggle, days-before, and repeat count. Sends formatted HTML emails to the item&rsquo;s owner.</p>
+        <h3>Smart Email Reminders</h3>
+        <p>Per-item reminder settings: toggle, days-before, and repeat count. The system calculates exact send dates by evenly spacing repeats
+           (e.g. 30 days / 3 repeats = reminders at 30, 20, and 10 days before expiry). Emails show &ldquo;reminder 2 of 3&rdquo; for clarity.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon icon-teal">&#9201;</div>
+        <h3>Automatic Daily Scheduler</h3>
+        <p>Enable automatic reminders from Admin Settings. A background scheduler fires daily at the configured hour (server time).
+           A <code>reminder_logs</code> table prevents duplicates. Missed reminders are caught up automatically on the next run.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon icon-purple">&#128101;</div>
@@ -469,8 +476,11 @@
       </div>
       <div class="step">
         <div class="step-num">6</div>
-        <h3>Send Reminders</h3>
-        <p>When triggered, the reminder engine scans all items with reminders enabled. If an item&rsquo;s expiry is within the configured window, a formatted HTML email is sent to the owner. Supports configurable days-before and repeat count per item.</p>
+        <h3>Automated &amp; Manual Reminders</h3>
+        <p>Each item has its own reminder config: days before expiry and repeat count. The system calculates exact send dates by evenly
+           spacing repeats within the window (e.g. 30 days / 3 repeats &rarr; days 30, 20, 10 before expiry).
+           Admins can trigger reminders manually, or enable the <strong>automatic daily scheduler</strong> which fires at a configurable
+           hour. A <code>reminder_logs</code> table prevents duplicate sends and catches up missed reminders.</p>
       </div>
     </div>
   </div>
@@ -767,7 +777,7 @@ helm install clares ./helm/clares-engine \
 
 # Upgrade to new version
 helm upgrade clares ./helm/clares-engine \
-  --set image.tag=v1.0.17 \
+  --set image.tag=v1.0.18 \
   --namespace clares</code>
       </div>
     </div>
@@ -792,7 +802,7 @@ helm upgrade clares ./helm/clares-engine \
         <div class="step-num">&#9881;</div>
         <h3>Key Helm Values</h3>
         <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.5rem;overflow-x:auto;white-space:pre;line-height:1.6">image.repository: devopsart1/clares-engine
-image.tag: v1.0.17
+image.tag: v1.0.18
 env.DB_HOST: your-db-host
 env.DB_NAME: clares
 env.SSL_MODE: "true"

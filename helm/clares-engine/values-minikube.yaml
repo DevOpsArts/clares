@@ -4,7 +4,7 @@ fullnameOverride: clares
 
 image:
   repository: devopsart1/clares-engine
-  tag: "v1.0.17"
+  tag: "v1.0.18"
   pullPolicy: IfNotPresent
 
 service:
