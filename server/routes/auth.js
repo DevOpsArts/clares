@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
     const result = await pool.query(
       `SELECT id, username, password_hash, role, display_name
        FROM users
-       WHERE username = $1 AND is_active = true`,
+       WHERE LOWER(username) = LOWER($1) AND is_active = true`,
       [username.trim()]
     )
 
@@ -39,6 +39,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' })
     }
 
+    // Fetch catalog-level permissions for this user
+    const permsResult = await pool.query(
+      `SELECT catalog_slug, role FROM user_catalog_permissions WHERE user_id = $1`,
+      [String(user.id)]
+    )
+    const catalogPermissions = {}
+    permsResult.rows.forEach((r) => { catalogPermissions[r.catalog_slug] = r.role })
+
     const payload = {
       sub:         user.id,
       username:    user.username,
@@ -50,7 +58,7 @@ router.post('/login', async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN || '8h',
     })
 
-    return res.json({ token, user: payload })
+    return res.json({ token, user: { ...payload, catalogPermissions } })
   } catch (err) {
     console.error('Login error:', err)
     return res.status(500).json({ error: 'Internal server error' })

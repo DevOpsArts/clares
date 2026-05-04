@@ -31,8 +31,16 @@ export function AuthProvider({ children }) {
     setCurrentUser(null)
   }
 
+  /** Check if user can access a catalog slug */
+  const hasCatalogAccess = (slug) => {
+    if (!currentUser) return false
+    if (currentUser.role === 'admin') return true
+    const perms = currentUser.catalogPermissions
+    return perms && (perms[slug] === 'view' || perms[slug] === 'admin')
+  }
+
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, login, logout, hasCatalogAccess }}>
       {children}
     </AuthContext.Provider>
   )

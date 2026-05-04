@@ -57,8 +57,9 @@ function parseCsv(text) {
 export default function CatalogPage() {
   const { type }        = useParams()
   const navigate        = useNavigate()
-  const { currentUser } = useAuth()
+  const { currentUser, hasCatalogAccess } = useAuth()
   const isAdmin         = currentUser?.role === 'admin'
+  const hasAccess       = hasCatalogAccess(type)
 
   const [catalogLabel, setCatalogLabel]   = useState(type)
   const [entries, setEntries]             = useState([])
@@ -200,6 +201,19 @@ export default function CatalogPage() {
 
   const expiringCount = entries.filter((r) => { const d = daysUntil(r.expiry_date); return d >= 0 && d <= 30 }).length
   const expiredCount  = entries.filter((r) => daysUntil(r.expiry_date) < 0).length
+
+  if (!hasAccess) {
+    return (
+      <div className="catalog-page">
+        <div className="catalog-header">
+          <div>
+            <h1 className="catalog-title">Access Denied</h1>
+            <p className="catalog-subtitle">You do not have permission to view this catalog.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="catalog-page">

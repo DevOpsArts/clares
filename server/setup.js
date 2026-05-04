@@ -7,12 +7,58 @@
 const path = require('path')
 require('dotenv').config({ path: path.join(__dirname, '../.env') })
 
-const pool = require('./db')
+const bcrypt = require('bcrypt')
+const pool   = require('./db')
 
 async function setup() {
   const client = await pool.connect()
   try {
     console.log('Connected to database.')
+
+    // ── users ───────────────────────────────────────────────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id            SERIAL PRIMARY KEY,
+        username      TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role          TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin','user','viewer')),
+        display_name  TEXT,
+        email         TEXT,
+        is_active     BOOLEAN NOT NULL DEFAULT true,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+    `)
+
+    // Add email column if missing (migration for existing installs)
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
+    `)
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+    `)
+
+    // Update role constraint to include 'viewer'
+    await client.query(`
+      ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+    `)
+    await client.query(`
+      ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin','user','viewer'));
+    `)
+
+    // Seed default admin user (admin / admin) — only if no users exist
+    const existing = await client.query('SELECT count(*) FROM users')
+    if (parseInt(existing.rows[0].count, 10) === 0) {
+      const hash = await bcrypt.hash('admin', 10)
+      await client.query(
+        `INSERT INTO users (username, password_hash, role, display_name, email)
+         VALUES ($1, $2, 'admin', 'Administrator', 'admin@localhost')`,
+        ['admin', hash]
+      )
+      console.log('✓ users table ready (default admin user created).')
+    } else {
+      console.log('✓ users table ready.')
+    }
 
     // ── renewals ────────────────────────────────────────────────────────
     await client.query(`

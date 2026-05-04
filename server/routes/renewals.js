@@ -47,12 +47,24 @@ router.get('/', async (_req, res) => {
   }
 })
 
-/** GET /api/renewals/type/:type — list by catalog type */
+/** GET /api/renewals/type/:type — list by catalog type (with permission check) */
 router.get('/type/:type', async (req, res) => {
   const { type } = req.params
   try {
     const types = await validTypes()
     if (!types.includes(type)) return res.status(404).json({ error: 'Unknown catalog type' })
+
+    // Non-admin users must have explicit catalog permission
+    if (req.user.role !== 'admin') {
+      const perm = await db.query(
+        `SELECT role FROM user_catalog_permissions WHERE user_id = $1 AND catalog_slug = $2`,
+        [String(req.user.sub), type]
+      )
+      if (perm.rowCount === 0) {
+        return res.status(403).json({ error: 'You do not have access to this catalog' })
+      }
+    }
+
     const { rows } = await db.query(
       `SELECT ${SELECT_COLS} FROM renewals WHERE type=$1 ORDER BY expiry_date ASC`, [type]
     )

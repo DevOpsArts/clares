@@ -5,13 +5,27 @@ const requireAdmin = require('../middleware/requireAdmin')
 const router = Router()
 const SLUG_RE = /^[a-z0-9_-]{1,50}$/
 
-/** GET /api/catalog-types — list all */
-router.get('/', async (_req, res) => {
+/** GET /api/catalog-types — list all (filtered by permissions for non-admin users) */
+router.get('/', async (req, res) => {
   try {
+    // Admins see everything
+    if (req.user && req.user.role === 'admin') {
+      const { rows } = await db.query(
+        `SELECT id, slug, label, is_builtin, created_at
+         FROM catalog_types
+         ORDER BY is_builtin DESC, label ASC`
+      )
+      return res.json(rows)
+    }
+
+    // Non-admin: only catalogs where the user has a permission entry
     const { rows } = await db.query(
-      `SELECT id, slug, label, is_builtin, created_at
-       FROM catalog_types
-       ORDER BY is_builtin DESC, label ASC`
+      `SELECT ct.id, ct.slug, ct.label, ct.is_builtin, ct.created_at
+       FROM catalog_types ct
+       INNER JOIN user_catalog_permissions ucp ON ucp.catalog_slug = ct.slug
+       WHERE ucp.user_id = $1
+       ORDER BY ct.is_builtin DESC, ct.label ASC`,
+      [String(req.user.sub)]
     )
     res.json(rows)
   } catch (err) {
