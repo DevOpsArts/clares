@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: devopsart1/clares-engine
-  tag: "v1.0.7"
+  tag: "v1.0.17"
   pullPolicy: IfNotPresent
 
 service:

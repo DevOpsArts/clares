@@ -286,7 +286,7 @@ helm/clares-engine/
 | Parameter              | Description                      | Default                |
 |------------------------|----------------------------------|------------------------|
 | `image.repository`     | Docker image                     | `devopsart1/clares-engine` |
-| `image.tag`            | Image tag                        | `v1.0.7`               |
+| `image.tag`            | Image tag                        | `v1.0.17`              |
 | `env.DB_HOST`          | PostgreSQL host                  | `""`                   |
 | `env.DB_PORT`          | PostgreSQL port                  | `5432`                 |
 | `env.DB_NAME`          | Database name                    | `""`                   |
