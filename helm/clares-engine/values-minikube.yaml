@@ -1,0 +1,25 @@
+replicaCount: 1
+
+image:
+  repository: devopsart1/clares-engine
+  tag: "v1.0.17"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 3002
+
+env:
+  DB_HOST: "clares-postgres-postgresql.clares.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "clares"
+  DB_USER: "clares"
+  SSL_MODE: "false"
+  JWT_EXPIRES_IN: "8h"
+  PORT: "3002"
+  CLIENT_ORIGIN: ""
+
+secrets:
+  DB_PASSWORD: "clares123"
+  JWT_SECRET: "clares-minikube-secret-key-2026"

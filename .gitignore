@@ -4,3 +4,4 @@ dist/
 *.local
 build-and-push.sh
 .DS_Store
+tmp/
