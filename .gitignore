@@ -3,3 +3,4 @@ dist/
 .env
 *.local
 build-and-push.sh
+.DS_Store
