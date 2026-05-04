@@ -314,6 +314,22 @@ helm install clares ./helm/clares-engine \
   --namespace clares --create-namespace
 ```
 
+#### Initialize the database (required after first install)
+
+After the CLARES pod is running, create the database tables and seed the default admin user:
+
+```bash
+# Wait for the pod to be ready
+kubectl rollout status deployment/clares-clares-engine -n clares
+
+# Run the setup script inside the pod
+kubectl exec deployment/clares-clares-engine -n clares -- node server/setup.js
+```
+
+This creates all tables (`users`, `renewals`, `catalog_types`, `smtp_config`, `user_catalog_permissions`) and seeds the default admin account (`admin` / `admin`).
+
+> **Note:** This step is only needed on first install. On upgrades, the tables already exist. The script is idempotent — safe to re-run.
+
 #### Upgrade (new version)
 
 ```bash

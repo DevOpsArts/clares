@@ -811,6 +811,19 @@ helm install clares-postgres bitnami/postgresql \
   --namespace clares</code>
       </div>
       <div class="step">
+        <div class="step-num">&#128736;</div>
+        <h3>Initialize Database</h3>
+        <p>After first install, create tables &amp; seed admin user (<strong>admin / admin</strong>):</p>
+        <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.5rem;overflow-x:auto;white-space:pre;line-height:1.6"># Wait for pod to be ready
+kubectl rollout status deployment/clares-clares-engine \
+  -n clares
+
+# Create tables &amp; seed admin
+kubectl exec deployment/clares-clares-engine \
+  -n clares -- node server/setup.js</code>
+        <p style="margin-top:.5rem;font-size:.85rem;color:var(--text-muted);">Only needed on first install. Safe to re-run (idempotent).</p>
+      </div>
+      <div class="step">
         <div class="step-num">&#127760;</div>
         <h3>Access Locally</h3>
         <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.5rem;overflow-x:auto;white-space:pre;line-height:1.6"># Port-forward
