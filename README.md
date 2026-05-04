@@ -89,17 +89,17 @@ This creates:
 
 > Re-running `setup-db` is safe — all migrations are idempotent.
 
-### 4. Create the first admin user
+### 4. Default admin account
 
-Connect to your database and insert an admin account (bcrypt hash for your password):
+The `setup-db` script automatically seeds a default admin user when the `users` table is empty:
 
-```sql
--- Generate a bcrypt hash first (e.g. using Node):
--- node -e "const b=require('bcrypt'); b.hash('yourpassword',12).then(console.log)"
+| Field    | Value          |
+|----------|----------------|
+| Username | `admin`        |
+| Password | `admin`        |
+| Role     | `admin`        |
 
-INSERT INTO users (username, password_hash, role, display_name, is_active)
-VALUES ('admin', '<bcrypt_hash>', 'admin', 'Administrator', true);
-```
+> **Important:** Change the default password immediately after first login via User Management.
 
 ### 5. Start the development server
 
@@ -246,20 +246,109 @@ This starts both servers concurrently:
 
 ### Docker
 
+The app uses a multi-stage Dockerfile: Stage 1 builds the React frontend with Vite, Stage 2 runs the Express server with production dependencies.
+
 ```bash
+# Build for local architecture
 docker build -t clares-engine .
 docker run -p 3002:3002 --env-file .env clares-engine
+
+# Build multi-arch and push to registry
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t devopsart1/clares-engine:v1.0.17 \
+  -t devopsart1/clares-engine:latest --push .
 ```
 
-### Kubernetes (Helm)
+### Kubernetes with Helm
+
+The Helm chart is located at `helm/clares-engine/` and includes templates for Deployment, Service, ConfigMap, Secret, and optional Ingress.
+
+#### Chart structure
+
+```
+helm/clares-engine/
+├── Chart.yaml              # Chart metadata
+├── NOTES.txt               # Post-install notes
+├── values.yaml             # Default values
+├── values-minikube.yaml    # Local minikube overrides
+├── values-prod.yaml        # Production overrides
+└── templates/
+    ├── _helpers.tpl         # Template helpers
+    ├── configmap.yaml       # Non-sensitive env vars
+    ├── secret.yaml          # DB_PASSWORD, JWT_SECRET
+    ├── deployment.yaml      # App deployment
+    ├── service.yaml         # ClusterIP service
+    └── ingress.yaml         # Optional ingress
+```
+
+#### Key configuration (values.yaml)
+
+| Parameter              | Description                      | Default                |
+|------------------------|----------------------------------|------------------------|
+| `image.repository`     | Docker image                     | `devopsart1/clares-engine` |
+| `image.tag`            | Image tag                        | `v1.0.7`               |
+| `env.DB_HOST`          | PostgreSQL host                  | `""`                   |
+| `env.DB_PORT`          | PostgreSQL port                  | `5432`                 |
+| `env.DB_NAME`          | Database name                    | `""`                   |
+| `env.DB_USER`          | Database user                    | `""`                   |
+| `env.SSL_MODE`         | Enable PostgreSQL SSL            | `true`                 |
+| `env.JWT_EXPIRES_IN`   | JWT token expiry                 | `8h`                   |
+| `secrets.DB_PASSWORD`  | Database password (Secret)       | `""`                   |
+| `secrets.JWT_SECRET`   | JWT signing key (Secret)         | `""`                   |
+| `service.type`         | Kubernetes service type          | `ClusterIP`            |
+| `ingress.enabled`      | Enable Ingress                   | `false`                |
+
+#### Install (fresh)
 
 ```bash
+# Minikube (local development)
 helm install clares ./helm/clares-engine \
   -f ./helm/clares-engine/values-minikube.yaml \
   --namespace clares --create-namespace
+
+# Production
+helm install clares ./helm/clares-engine \
+  -f ./helm/clares-engine/values-prod.yaml \
+  --namespace clares --create-namespace
 ```
 
-The Helm chart supports `values-minikube.yaml` for local development and `values-prod.yaml` for production. Configuration is injected via ConfigMap and Secret.
+#### Upgrade (new version)
+
+```bash
+helm upgrade clares ./helm/clares-engine \
+  -f ./helm/clares-engine/values-minikube.yaml \
+  --set image.tag=v1.0.17 \
+  --namespace clares
+
+# Verify rollout
+kubectl rollout status deployment/clares-clares-engine -n clares
+```
+
+#### Access locally (minikube)
+
+```bash
+# Port-forward to localhost
+kubectl port-forward svc/clares-clares-engine 3002:80 -n clares
+# Open http://localhost:3002
+
+# Or use minikube service
+minikube service clares-clares-engine -n clares
+```
+
+#### PostgreSQL on Kubernetes
+
+For local development, deploy PostgreSQL via Bitnami Helm chart:
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install clares-postgres bitnami/postgresql \
+  --set auth.database=clares \
+  --set auth.username=clares \
+  --set auth.password=yourpassword \
+  --namespace clares --create-namespace
+```
+
+Set `DB_HOST` in your values file to `clares-postgres-postgresql.clares.svc.cluster.local`.
 
 ---
 

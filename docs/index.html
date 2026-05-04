@@ -327,6 +327,7 @@
     <li><a href="#how-it-works">How It Works</a></li>
     <li><a href="#tech-stack">Tech Stack</a></li>
     <li><a href="#api">API</a></li>
+    <li><a href="#deployment">Deployment</a></li>
     <li><a href="#getting-started">Get Started</a></li>
     <li><a href="https://github.com/DevOpsArts/clares" target="_blank">GitHub</a></li>
   </ul>
@@ -718,8 +719,10 @@ PORT=3002</code>
       <div class="step">
         <div class="step-num">3</div>
         <h3>Set Up Database</h3>
-        <p>Run the idempotent migration script to create all tables.</p>
-        <code>npm run setup-db</code>
+        <p>Run the idempotent migration script. It creates all tables and seeds a default admin user (<strong>admin / admin</strong>).</p>
+        <code>npm run setup-db
+# Default login → admin / admin
+# Change the password after first login!</code>
       </div>
       <div class="step">
         <div class="step-num">4</div>
@@ -728,6 +731,95 @@ PORT=3002</code>
         <code>npm run dev
 # Frontend → localhost:5174
 # API      → localhost:3002</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Deployment ═══ -->
+<section id="deployment">
+  <div class="container">
+    <div class="section-header">
+      <h2>Deployment</h2>
+      <p>Docker &amp; Helm for production-ready Kubernetes deployments.</p>
+    </div>
+    <div class="features-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="feature-card">
+        <div class="feature-icon icon-blue">&#128171;</div>
+        <h3>Docker</h3>
+        <p>Multi-stage Dockerfile: Stage 1 builds the React frontend with Vite, Stage 2 runs Express with production dependencies. Supports multi-arch (amd64/arm64).</p>
+        <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.75rem;overflow-x:auto;white-space:pre;line-height:1.6"># Build &amp; run locally
+docker build -t clares-engine .
+docker run -p 3002:3002 --env-file .env clares-engine
+
+# Multi-arch push to registry
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t devopsart1/clares-engine:latest --push .</code>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon icon-green">&#9784;</div>
+        <h3>Helm Chart</h3>
+        <p>Full Helm chart at <code>helm/clares-engine/</code> with Deployment, Service, ConfigMap, Secret, and optional Ingress templates.</p>
+        <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.75rem;overflow-x:auto;white-space:pre;line-height:1.6"># Fresh install (minikube)
+helm install clares ./helm/clares-engine \
+  -f ./helm/clares-engine/values-minikube.yaml \
+  --namespace clares --create-namespace
+
+# Upgrade to new version
+helm upgrade clares ./helm/clares-engine \
+  --set image.tag=v1.0.17 \
+  --namespace clares</code>
+      </div>
+    </div>
+
+    <div class="arch-diagram" style="margin-top:2rem;">
+      <h3 style="margin-bottom:1rem;">Helm Chart Structure</h3>
+      <pre style="text-align:left;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:.85rem;line-height:1.7;display:inline-block;">helm/clares-engine/
+├── Chart.yaml              <span style="color:var(--text-muted)"># Chart metadata</span>
+├── values.yaml             <span style="color:var(--text-muted)"># Default config</span>
+├── values-minikube.yaml    <span style="color:var(--text-muted)"># Local dev overrides</span>
+├── values-prod.yaml        <span style="color:var(--text-muted)"># Production overrides</span>
+└── templates/
+    ├── configmap.yaml       <span style="color:var(--text-muted)"># DB_HOST, DB_PORT, SSL_MODE, etc.</span>
+    ├── secret.yaml          <span style="color:var(--text-muted)"># DB_PASSWORD, JWT_SECRET</span>
+    ├── deployment.yaml      <span style="color:var(--text-muted)"># App pods</span>
+    ├── service.yaml         <span style="color:var(--text-muted)"># ClusterIP service</span>
+    └── ingress.yaml         <span style="color:var(--text-muted)"># Optional ingress</span></pre>
+    </div>
+
+    <div class="steps" style="margin-top:2rem;">
+      <div class="step">
+        <div class="step-num">&#9881;</div>
+        <h3>Key Helm Values</h3>
+        <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.5rem;overflow-x:auto;white-space:pre;line-height:1.6">image.repository: devopsart1/clares-engine
+image.tag: v1.0.17
+env.DB_HOST: your-db-host
+env.DB_NAME: clares
+env.SSL_MODE: "true"
+env.JWT_EXPIRES_IN: "8h"
+secrets.DB_PASSWORD: your-password
+secrets.JWT_SECRET: your-secret</code>
+      </div>
+      <div class="step">
+        <div class="step-num">&#128451;</div>
+        <h3>PostgreSQL on K8s</h3>
+        <p>For local dev, deploy PostgreSQL via Bitnami:</p>
+        <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.5rem;overflow-x:auto;white-space:pre;line-height:1.6">helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install clares-postgres bitnami/postgresql \
+  --set auth.database=clares \
+  --set auth.username=clares \
+  --namespace clares</code>
+      </div>
+      <div class="step">
+        <div class="step-num">&#127760;</div>
+        <h3>Access Locally</h3>
+        <code style="display:block;background:#f0f3f8;border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.5rem;overflow-x:auto;white-space:pre;line-height:1.6"># Port-forward
+kubectl port-forward svc/clares-clares-engine \
+  3002:80 -n clares
+# Open http://localhost:3002
+
+# Or use minikube service
+minikube service clares-clares-engine -n clares</code>
       </div>
     </div>
   </div>
